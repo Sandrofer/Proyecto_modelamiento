@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio de Sesión</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="formulario">
+            <h1>UTASHOP </h1>
+            <h2>Inicio de Sesión  </h2>
+            <form method="post" action="basededatos.php">
+                <div class="username">
+                    <input type="text" id="usuario" name="usuario" placeholder="Nombre del usuario" required>
+                </div>
+                
+                <div class="contrasena">
+                    <input type="password" id="clave" name="clave" placeholder="Contraseña" required>
+                </div>
+                
+                <div class="recordar">
+                    <a href="recuperar.php">¿Olvidó su contraseña?</a>
+                </div>
+                
+                <input type="submit" value="Iniciar">
+                
+                <div class="registrarse">
+                    ¿No tienes cuenta? <a href="registro.php"> Regístrate </a>
+                </div>
+            </form>
+        </div>
+        <div class="image-container">
+            <img src="Imagen.png" alt="UTASHOP" class="login-image">
+        </div>
+    </div>
+</body>
+</html>

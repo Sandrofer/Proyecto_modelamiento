@@ -1,0 +1,173 @@
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Montserrat', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 60px;
+}
+
+.formulario {
+    flex: 1;
+    max-width: 500px;
+    background: white;
+    padding: 60px;
+    border-radius: 12px;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
+}
+
+.image-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
+}
+
+#video-fondo {
+    display: none;
+}
+
+/* título */
+.formulario h1 {
+    text-align: left;
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 36px;
+    font-weight: 700;
+}
+
+.formulario h2 {
+    text-align: left;
+    margin: 0 0 40px 0;
+    color: #666;
+    font-size: 22px;
+    font-weight: 400;
+}
+
+form .username,
+form .contrasena {
+    position: relative;
+    margin: 25px 0;
+}
+
+.username input,
+.contrasena input {
+    width: 100%;
+    padding: 16px 20px;
+    height: 56px;
+    font-size: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #f9f9f9;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.username input:focus,
+.contrasena input:focus {
+    border-color: #333;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+/* campos de entrada */
+.username label,
+.contrasena label {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    color: #666;
+    font-size: 13px;
+    background: white;
+    padding: 0 5px;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+/* Olvidaste tu contraseña */
+.recordar {
+    margin: 15px 0 25px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.recordar a {
+    color: #666;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.recordar a:hover {
+    color: #000;
+    text-decoration: underline;
+}
+
+/*  botón de envío */
+input[type="submit"] {
+    width: 100%;
+    height: 60px;
+    border: none;
+    background: #000;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 10px;
+}
+
+input[type="submit"]:hover {
+    background: #333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+.registrarse {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 15px;
+    color: #666;
+}
+
+.registrarse a {
+    color: #000;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.registrarse a:hover {
+    text-decoration: underline;
+}
+
+
+
+
+
+
+
+
