@@ -16,9 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt = $conexion->prepare("SELECT * FROM usuario WHERE nombre_usuario=?");
     $stmt->bind_param("s", $usuario);
     $stmt->execute(); 
-
     $resultado = $stmt->get_result();
-
     // Verificar si el usuario existe
     if ($resultado->num_rows > 0) {
         // Recuperar el usuario de la base de datos
