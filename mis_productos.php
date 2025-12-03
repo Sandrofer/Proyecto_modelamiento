@@ -26,10 +26,6 @@ if (isset($_GET['eliminar'])) {
             $delete_stmt = $conexion->prepare("UPDATE productos SET eliminado = TRUE, fecha_eliminacion = NOW(), estado = 'inactivo' WHERE id = ?");
             $delete_stmt->bind_param("i", $producto_id);
             
-            // O para eliminación permanente (menos seguro):
-            // $delete_stmt = $conexion->prepare("DELETE FROM productos WHERE id = ? AND usuario_vendedor = ?");
-            // $delete_stmt->bind_param("is", $producto_id, $_SESSION['username']);
-            
             if ($delete_stmt->execute()) {
                 $mensaje = "✅ Producto eliminado correctamente";
                 $tipo_mensaje = "success";
@@ -46,11 +42,70 @@ if (isset($_GET['eliminar'])) {
     $check_stmt->close();
 }
 
+// Procesar cambio de estado
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cambiar_estado'])) {
+    $producto_id = intval($_POST['producto_id']);
+    $nuevo_estado = $conexion->real_escape_string($_POST['nuevo_estado']);
+    
+    // Verificar que el producto pertenece al usuario
+    $check_stmt = $conexion->prepare("SELECT usuario_vendedor FROM productos WHERE id = ?");
+    $check_stmt->bind_param("i", $producto_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    
+    if ($check_result->num_rows > 0) {
+        $producto = $check_result->fetch_assoc();
+        
+        if ($producto['usuario_vendedor'] === $_SESSION['username']) {
+            $update_stmt = $conexion->prepare("UPDATE productos SET estado = ? WHERE id = ?");
+            $update_stmt->bind_param("si", $nuevo_estado, $producto_id);
+            
+            if ($update_stmt->execute()) {
+                $mensaje = "✅ Estado del producto actualizado correctamente";
+                $tipo_mensaje = "success";
+            } else {
+                $mensaje = "❌ Error al actualizar el estado";
+                $tipo_mensaje = "error";
+            }
+            $update_stmt->close();
+        } else {
+            $mensaje = "❌ No tienes permisos para modificar este producto";
+            $tipo_mensaje = "error";
+        }
+    }
+    $check_stmt->close();
+}
+
 // Obtener productos del usuario
 $stmt = $conexion->prepare("SELECT * FROM productos WHERE usuario_vendedor = ? AND (eliminado = FALSE OR eliminado IS NULL) ORDER BY fecha_publicacion DESC");
 $stmt->bind_param("s", $_SESSION['username']);
 $stmt->execute();
 $productos = $stmt->get_result();
+
+// Obtener estadísticas de productos por estado
+$estadisticas_stmt = $conexion->prepare("
+    SELECT estado, COUNT(*) as total 
+    FROM productos 
+    WHERE usuario_vendedor = ? AND (eliminado = FALSE OR eliminado IS NULL) 
+    GROUP BY estado
+");
+$estadisticas_stmt->bind_param("s", $_SESSION['username']);
+$estadisticas_stmt->execute();
+$estadisticas_result = $estadisticas_stmt->get_result();
+
+$contadores = [
+    'activo' => 0,
+    'inactivo' => 0,
+    'revision' => 0,
+    'rechazado' => 0,
+    'vendido' => 0,
+    'pendiente' => 0
+];
+
+while ($row = $estadisticas_result->fetch_assoc()) {
+    $contadores[$row['estado']] = $row['total'];
+}
+$estadisticas_stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -69,6 +124,18 @@ $productos = $stmt->get_result();
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        .estado-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+        }
+        .estado-activo { background-color: #10B981; color: white; }
+        .estado-inactivo { background-color: #6B7280; color: white; }
+        .estado-vendido { background-color: #EF4444; color: white; }
+        .estado-pendiente { background-color: #F59E0B; color: white; }
+        .estado-revision { background-color: #3B82F6; color: white; }
+        .estado-rechazado { background-color: #DC2626; color: white; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -108,22 +175,26 @@ $productos = $stmt->get_result();
             <?php endif; ?>
 
             <!-- Estadísticas -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
                 <div class="bg-white p-4 rounded-lg shadow text-center">
                     <div class="text-2xl font-bold text-blue-600"><?php echo $productos->num_rows; ?></div>
-                    <div class="text-gray-600">Productos Activos</div>
+                    <div class="text-gray-600">Total</div>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-green-600">0</div>
+                    <div class="text-2xl font-bold text-green-600"><?php echo $contadores['activo']; ?></div>
+                    <div class="text-gray-600">Activos</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <div class="text-2xl font-bold text-red-600"><?php echo $contadores['vendido']; ?></div>
                     <div class="text-gray-600">Vendidos</div>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-yellow-600">0</div>
-                    <div class="text-gray-600">En Revisión</div>
+                    <div class="text-2xl font-bold text-yellow-600"><?php echo $contadores['pendiente']; ?></div>
+                    <div class="text-gray-600">Pendientes</div>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow text-center">
-                    <div class="text-2xl font-bold text-red-600">0</div>
-                    <div class="text-gray-600">Eliminados</div>
+                    <div class="text-2xl font-bold text-gray-600"><?php echo $contadores['inactivo']; ?></div>
+                    <div class="text-gray-600">Inactivos</div>
                 </div>
             </div>
 
@@ -165,18 +236,16 @@ $productos = $stmt->get_result();
                                         <div class="text-sm font-bold text-green-600">$<?php echo number_format($producto['precio'], 2); ?></div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php
-                                        $estados = [
-                                            'activo' => ['color' => 'green', 'text' => '🟢 Activo'],
-                                            'inactivo' => ['color' => 'red', 'text' => '🔴 Inactivo'],
-                                            'revision' => ['color' => 'yellow', 'text' => '🟡 En Revisión'],
-                                            'rechazado' => ['color' => 'red', 'text' => '❌ Rechazado']
-                                        ];
-                                        $estado = $estados[$producto['estado']] ?? $estados['inactivo'];
-                                        ?>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<?php echo $estado['color']; ?>-100 text-<?php echo $estado['color']; ?>-800">
-                                            <?php echo $estado['text']; ?>
-                                        </span>
+                                        <form method="POST" class="flex items-center space-x-2">
+                                            <input type="hidden" name="producto_id" value="<?php echo $producto['id']; ?>">
+                                            <select name="nuevo_estado" onchange="this.form.submit()" class="text-sm border rounded p-1">
+                                                <option value="activo" <?php echo $producto['estado'] == 'activo' ? 'selected' : ''; ?>>Activo</option>
+                                                <option value="inactivo" <?php echo $producto['estado'] == 'inactivo' ? 'selected' : ''; ?>>Inactivo</option>
+                                                <option value="vendido" <?php echo $producto['estado'] == 'vendido' ? 'selected' : ''; ?>>Vendido</option>
+                                                <option value="pendiente" <?php echo $producto['estado'] == 'pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                            </select>
+                                            <input type="hidden" name="cambiar_estado" value="1">
+                                        </form>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <?php echo date('d/m/Y', strtotime($producto['fecha_publicacion'])); ?>
@@ -184,8 +253,8 @@ $productos = $stmt->get_result();
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
                                             <a href="editar_producto.php?id=<?php echo $producto['id']; ?>" class="text-blue-600 hover:text-blue-900">
-    <i class="fas fa-edit mr-1"></i>Editar
-</a>
+                                                <i class="fas fa-edit mr-1"></i>Editar
+                                            </a>
                                             <a href="?eliminar=<?php echo $producto['id']; ?>" 
                                                class="text-red-600 hover:text-red-900"
                                                onclick="return confirm('¿Estás seguro de que quieres eliminar este producto?')">
